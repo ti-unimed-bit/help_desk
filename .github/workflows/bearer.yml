@@ -9,25 +9,23 @@ name: Bearer
 
 on:
   push:
-    branches: ["master" ]
+    branches: ["main"]
   pull_request:
-    # The branches below must be a subset of the branches above
-    branches: ["master"]
+    branches: ["main"]
   schedule:
-    - cron: '33 10 * * 2'
+    - cron: '32 18 * * 2'
 
 permissions:
-  contents: read # for actions/checkout to fetch code
-  security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
-  actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
+  contents: read
+  security-events: write
+  actions: read
 
 jobs:
   bearer:
     runs-on: ubuntu-latest
     steps:
-      # Checkout project source
-      - uses: actions/checkout@v4
-      # Scan code using Bearer CLI
+      - uses: actions/checkout@v3
+
       - name: Run Report
         id: report
         uses: bearer/bearer-action@828eeb928ce2f4a7ca5ed57fb8b59508cb8c79bc
@@ -36,7 +34,17 @@ jobs:
           format: sarif
           output: results.sarif
           exit-code: 0
-      # Upload SARIF file generated in previous step
+
+      - name: Fix SARIF file if necessary
+        run: |
+          if jq -e '.runs[0].results | type != "array"' results.sarif > /dev/null; then
+            echo "Fixing 'results' to be an array..."
+            jq '.runs[0].results = []' results.sarif > fixed.sarif
+            mv fixed.sarif results.sarif
+          else
+            echo "'results' is already an array. No fix needed."
+          fi
+
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v3
         with:
