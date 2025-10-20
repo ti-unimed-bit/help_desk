@@ -1,19 +1,12 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-#
-# This workflow file requires a free account on Bearer.com to manage findings, notifications and more.
-# See https://docs.bearer.com/guides/bearer-cloud/
 name: Bearer
 
 on:
   push:
-    branches: ["main"]
+    branches: ["master"]
   pull_request:
-    branches: ["main"]
+    branches: ["master"]
   schedule:
-    - cron: '32 18 * * 2'
+    - cron: '33 10 * * 2'
 
 permissions:
   contents: read
@@ -24,7 +17,7 @@ jobs:
   bearer:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Run Report
         id: report
@@ -35,14 +28,14 @@ jobs:
           output: results.sarif
           exit-code: 0
 
-      - name: Fix SARIF file if necessary
+      - name: Corrigir SARIF inválido
         run: |
-          if jq -e '.runs[0].results | type != "array"' results.sarif > /dev/null; then
-            echo "Fixing 'results' to be an array..."
-            jq '.runs[0].results = []' results.sarif > fixed.sarif
+          if jq '(.runs[0].results | type) != "array"' results.sarif > /dev/null; then
+            echo "Corrigindo 'results' para ser um array..."
+            jq '.runs[0].results = [ .runs[0].results ]' results.sarif > fixed.sarif
             mv fixed.sarif results.sarif
           else
-            echo "'results' is already an array. No fix needed."
+            echo "'results' já é um array. Nenhuma correção necessária."
           fi
 
       - name: Upload SARIF file
