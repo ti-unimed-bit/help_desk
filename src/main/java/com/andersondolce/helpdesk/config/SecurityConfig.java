@@ -42,7 +42,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 			http.headers().frameOptions().disable();
 		}
 		
-		http.cors().and().csrf().disable();
+		http.cors();
+		// Optionally disable CSRF only for /h2-console/** when in 'test' profile
+		if (Arrays.asList(env.getActiveProfiles()).contains("test")) {
+			http.csrf().ignoringAntMatchers("/h2-console/**");
+		}
 		http.addFilter(new JWTAuthenticationFilter(authenticationManager(), jwtUtil));
 		http.addFilter(new JWTAuthorizationFilter(authenticationManager(), jwtUtil, userDetailsService));
 		
