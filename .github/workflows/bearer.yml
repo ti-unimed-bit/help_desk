@@ -16,10 +16,18 @@ permissions:
 jobs:
   bearer:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Run Report
+    permissions: # 🔐 Restringe permissões apenas para este job
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repositório
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1  # ⬇️ Evita clonar histórico desnecessário
+
+      - name: Executar Bearer Scan
         id: report
         uses: bearer/bearer-action@828eeb928ce2f4a7ca5ed57fb8b59508cb8c79bc
         with:
@@ -28,7 +36,7 @@ jobs:
           output: results.sarif
           exit-code: 0
 
-      - name: Corrigir SARIF inválido
+      - name: Verificar e corrigir SARIF (se necessário)
         run: |
           if jq '(.runs[0].results | type) != "array"' results.sarif > /dev/null; then
             echo "Corrigindo 'results' para ser um array..."
@@ -38,7 +46,7 @@ jobs:
             echo "'results' já é um array. Nenhuma correção necessária."
           fi
 
-      - name: Upload SARIF file
+      - name: Fazer upload do SARIF para Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
