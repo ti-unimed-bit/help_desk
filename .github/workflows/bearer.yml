@@ -17,7 +17,7 @@ jobs:
   bearer:
     runs-on: ubuntu-latest
 
-    permissions: # 🔐 Restringe permissões apenas para este job
+    permissions: #  Restringe permissões apenas para este job
       contents: read
       security-events: write
 
@@ -25,7 +25,7 @@ jobs:
       - name: Checkout repositório
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1  # ⬇️ Evita clonar histórico desnecessário
+          fetch-depth: 1  #  Evita clonar histórico desnecessário
 
       - name: Executar Bearer Scan
         id: report
