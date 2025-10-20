@@ -17,7 +17,7 @@ jobs:
   bearer:
     runs-on: ubuntu-latest
 
-    permissions: #  Restringe permissões apenas para este job
+    permissions: # 🔐 Permissões restritas ao job
       contents: read
       security-events: write
 
@@ -25,7 +25,7 @@ jobs:
       - name: Checkout repositório
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1  #  Evita clonar histórico desnecessário
+          fetch-depth: 1  # ⬇️ Clona apenas o último commit
 
       - name: Executar Bearer Scan
         id: report
@@ -36,14 +36,23 @@ jobs:
           output: results.sarif
           exit-code: 0
 
-      - name: Verificar e corrigir SARIF (se necessário)
+      - name: Corrigir SARIF se necessário
         run: |
-          if jq '(.runs[0].results | type) != "array"' results.sarif > /dev/null; then
-            echo "Corrigindo 'results' para ser um array..."
+          set -e
+          echo "Verificando e corrigindo o SARIF (results.sarif)..."
+
+          if ! jq -e '.runs[0].results' results.sarif > /dev/null; then
+            echo "'results' está ausente. Adicionando como array vazio."
+            jq '.runs[0].results = []' results.sarif > fixed.sarif
+            mv fixed.sarif results.sarif
+
+          elif jq -e '(.runs[0].results | type) != "array"' results.sarif > /dev/null; then
+            echo "'results' não é um array. Corrigindo..."
             jq '.runs[0].results = [ .runs[0].results ]' results.sarif > fixed.sarif
             mv fixed.sarif results.sarif
+
           else
-            echo "'results' já é um array. Nenhuma correção necessária."
+            echo "'results' já está correto."
           fi
 
       - name: Fazer upload do SARIF para Code Scanning
